@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.apache.carbondata</groupId>
+    <artifactId>carbondata-parent</artifactId>
+    <version>2.3.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>carbondata-assembly</artifactId>
+  <packaging>pom</packaging>
+  <name>Apache CarbonData :: Assembly</name>
+
+  <properties>
+    <carbondata.jar.dir>scala-${scala.binary.version}</carbondata.jar.dir>
+    <carbondata.jar.basename>apache-carbondata-${project.version}-bin-spark${spark.version}-hadoop${hadoop.version}.jar</carbondata.jar.basename>
+    <carbondata.jar>${project.build.directory}/${carbondata.jar.dir}/${carbondata.jar.basename}</carbondata.jar>
+    <hadoop.deps.scope>provided</hadoop.deps.scope>
+    <spark.deps.scope>provided</spark.deps.scope>
+    <scala.deps.scope>provided</scala.deps.scope>
+    <dev.path>${basedir}/../dev</dev.path>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-processing</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-spark_${spark.binary.version}</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-mv-plan_${spark.binary.version}</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <shadedArtifactAttached>false</shadedArtifactAttached>
+          <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+          <outputFile>${carbondata.jar}</outputFile>
+          <artifactSet>
+            <includes>
+              <include>*:*</include>
+              <!--use the following line if we only want carbondata related classes-->
+              <!--<include>org.apache.carbondata:*</include>-->
+            </includes>
+            <excludes>
+              <exclude>org.apache.hadoop:*</exclude>
+              <exclude>org.apache.spark:*</exclude>
+              <exclude>org.apache.zookeeper:*</exclude>
+              <exclude>org.apache.avro:*</exclude>
+              <exclude>org.apache.hive:*</exclude>
+              <exclude>com.google.guava:guava</exclude>
+              <exclude>org.xerial.snappy:snappy-java</exclude>
+              <exclude>*:servlet-api</exclude>
+              <exclude>*:javax.inject</exclude>
+              <exclude>javax.activation:activation</exclude>
+              <!--add more items to be excluded from the assembly-->
+            </excludes>
+          </artifactSet>
+          <filters>
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>org/datanucleus/**</exclude>
+                <exclude>META-INF/*.SF</exclude>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+                <exclude>META-INF/vfs-providers.xml</exclude>
+                <exclude>io/netty/**</exclude>
+              </excludes>
+            </filter>
+          </filters>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <manifestEntries>
+                    <Specification-Version>32</Specification-Version>
+                    <Compile-Timestamp>2015-07-15 02.59.16</Compile-Timestamp>
+                  </manifestEntries>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/org.apache.spark.sql.sources.DataSourceRegister</resource>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  <profiles>
+    <profile>
+      <id>include-all</id>
+      <properties>
+        <hadoop.deps.scope>compile</hadoop.deps.scope>
+        <spark.deps.scope>compile</spark.deps.scope>
+        <scala.deps.scope>compile</scala.deps.scope>
+      </properties>
+    </profile>
+    <profile>
+      <id>dist</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+              <finalName>carbondata_${scala.binary.version}-${project.version}</finalName>
+            </configuration>
+            <executions>
+              <execution>
+                <id>dist</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+                <configuration>
+                  <descriptors>
+                    <descriptor>src/main/assembly/assembly.xml</descriptor>
+                  </descriptors>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>
