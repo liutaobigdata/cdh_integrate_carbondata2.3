@@ -6,5 +6,5 @@ CarbonData file format is a columnar store in HDFS, it has many features that a 
 * Supports for various use cases with one single Data format : like interactive OLAP-style query, Sequential Access (big scan), Random Access (narrow scan).
 
 ## Reference 
- http://carbondata.apache.org
+https://github.com/apache/carbondata
 
